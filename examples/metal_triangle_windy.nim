@@ -1,8 +1,7 @@
 import darwin/objc/runtime
-import darwin/app_kit/nsview
 import darwin/foundation/nsgeometry
 import darwin/foundation/[nserror, nsstring]
-import metalx/[cametal, metal]
+import metalx/[cametal, metal, view]
 import metalx/windyshim
 
 when not defined(macosx):
@@ -10,13 +9,7 @@ when not defined(macosx):
 
 let window = newWindow("Metal Triangle (Windy)", ivec2(1280, 800))
 
-let existingView = cocoaContentView(window)
-let metalHostView = NSView.alloc().initWithFrame(existingView.bounds())
-metalHostView.setAutoresizingMask(
-  NSAutoresizingMaskOptions(NSViewWidthSizable.ord or NSViewHeightSizable.ord)
-)
-metalHostView.setWantsLayer(true)
-existingView.addSubview(metalHostView)
+let metalHostView = attachMetalHostView(cocoaWindow(window))
 
 let device = MTLCreateSystemDefaultDevice()
 if device.isNil:

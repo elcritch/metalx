@@ -11,4 +11,5 @@ requires "darwin#head"
 
 feature "test":
   requires "windy"
+  requires "sdl2"
 
