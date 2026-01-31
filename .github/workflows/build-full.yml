@@ -47,11 +47,6 @@ jobs:
         # sync deps
         atlas install --feature:metal --feature:sdl2 --feature:windy
 
-    - name: Install SDL2 (macOS)
-      run: |
-        brew update
-        brew install sdl2
-
     - name: Build Tests
       run: |
         nim test
