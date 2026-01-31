@@ -45,7 +45,7 @@ jobs:
     - name: Install Deps
       run: |
         # sync deps
-        atlas install --feature:metal --feature:sdl2 --feature:windy
+        atlas install --feature:test
 
     - name: Build Tests
       run: |
