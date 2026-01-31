@@ -1,0 +1,130 @@
+import std/importutils
+import darwin/objc/runtime
+import darwin/app_kit/[nsview, nswindow]
+import darwin/core_graphics/cggeometry
+import darwin/foundation/[nserror, nsstring]
+import metalx/[cametal, metal]
+import windy
+
+when not defined(macosx):
+  {.error: "This example requires macOS.".}
+
+privateAccess(Window)
+
+let window = newWindow("Metal Triangle (Windy)", ivec2(1280, 800))
+
+let nsWindow: NSWindow = window.inner
+let contentView = nsWindow.contentView()
+contentView.setWantsLayer(true)
+
+let device = MTLCreateSystemDefaultDevice()
+if device.isNil:
+  quit "Metal device not available"
+
+let metalLayer = CAMetalLayer.alloc().init()
+metalLayer.setDevice(device)
+metalLayer.setDrawableSize(
+  CGSize(width: window.size.x.float, height: window.size.y.float)
+)
+contentView.setLayer(metalLayer)
+
+let shaderSource =
+  """
+#include <metal_stdlib>
+using namespace metal;
+
+struct VSOut {
+  float4 position [[position]];
+  float4 color;
+};
+
+vertex VSOut vs_main(uint vid [[vertex_id]],
+                     const device float2* positions [[buffer(0)]]) {
+  VSOut out;
+  float2 p = positions[vid];
+  out.position = float4(p.x, p.y, 0.0, 1.0);
+  out.color = float4(1.0, 0.5, p.x, 1.0);
+  return out;
+}
+
+fragment float4 fs_main(VSOut in [[stage_in]]) {
+  return in.color;
+}
+"""
+
+var error: NSError
+let library = newLibraryWithSource(
+  device,
+  NSString.withUTF8String(cstring(shaderSource)),
+  MTLCompileOptions(nil),
+  addr error,
+)
+if library.isNil:
+  echo error
+  quit "Failed to compile Metal shaders"
+
+let vertexFunction =
+  newFunctionWithName(library, NSString.withUTF8String(cstring("vs_main")))
+let fragmentFunction =
+  newFunctionWithName(library, NSString.withUTF8String(cstring("fs_main")))
+if vertexFunction.isNil or fragmentFunction.isNil:
+  quit "Failed to find Metal shader functions"
+
+let pipelineDescriptor = MTLRenderPipelineDescriptor.alloc().init()
+setVertexFunction(pipelineDescriptor, vertexFunction)
+setFragmentFunction(pipelineDescriptor, fragmentFunction)
+
+let pipelineColor = objectAtIndexedSubscript(colorAttachments(pipelineDescriptor), 0)
+setPixelFormat(pipelineColor, metalLayer.pixelFormat())
+
+let pipelineState =
+  newRenderPipelineStateWithDescriptor(device, pipelineDescriptor, addr error)
+if pipelineState.isNil:
+  echo error
+  quit "Failed to create pipeline state"
+
+let vertices: array[6, float32] =
+  [-0.6'f32, -0.6'f32, 0.6'f32, -0.6'f32, 0.0'f32, 0.6'f32]
+
+let vertexBuffer = newBufferWithBytes(
+  device,
+  vertices[0].addr,
+  NSUInteger(vertices.len * sizeof(float32)),
+  MTLResourceOptions(0),
+)
+if vertexBuffer.isNil:
+  quit "Failed to create vertex buffer"
+
+let queue = newCommandQueue(device)
+if queue.isNil:
+  quit "Failed to create command queue"
+
+proc drawFrame() =
+  let drawable = metalLayer.nextDrawable()
+  if drawable.isNil:
+    return
+
+  let passDescriptor = MTLRenderPassDescriptor.alloc().init()
+  let colorAttachment = objectAtIndexedSubscript(colorAttachments(passDescriptor), 0)
+  setTexture(colorAttachment, texture(drawable))
+  setLoadAction(colorAttachment, MTLLoadAction(2))
+  setStoreAction(colorAttachment, MTLStoreAction(0))
+  setClearColor(
+    colorAttachment, MTLClearColor(red: 0.1, green: 0.1, blue: 0.12, alpha: 1.0)
+  )
+
+  let buffer = commandBuffer(queue)
+  let encoder = renderCommandEncoderWithDescriptor(buffer, passDescriptor)
+  setRenderPipelineState(encoder, pipelineState)
+  setVertexBuffer(encoder, vertexBuffer, 0, 0)
+  drawPrimitives(encoder, MTLPrimitiveType(3), 0, 3)
+  endEncoding(encoder)
+  presentDrawable(buffer, cast[MTLDrawable](drawable))
+  commit(buffer)
+
+while not window.closeRequested:
+  metalLayer.setDrawableSize(
+    CGSize(width: window.size.x.float, height: window.size.y.float)
+  )
+  drawFrame()
+  pollEvents()

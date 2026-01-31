@@ -11,6 +11,7 @@ type
   MTLPrimitiveType* = distinct NSUInteger
   MTLLoadAction* = distinct NSUInteger
   MTLStoreAction* = distinct NSUInteger
+  MTLResourceOptions* = distinct NSUInteger
 
   MTLClearColor* = object
     red*: cdouble
@@ -35,6 +36,7 @@ type
   MTLRenderCommandEncoder* = ptr object of NSObject
   MTLCommandQueue* = ptr object of NSObject
   MTLCommandBuffer* = ptr object of NSObject
+  MTLDrawable* = ptr object of NSObject
 
 proc MTLCreateSystemDefaultDevice*(): MTLDevice {.importc.}
 
@@ -43,14 +45,25 @@ proc commandBuffer*(q: MTLCommandQueue): MTLCommandBuffer {.objc: "commandBuffer
 proc waitUntilCompleted*(b: MTLCommandBuffer) {.objc: "waitUntilCompleted".}
 proc status*(b: MTLCommandBuffer): NSUInteger {.objc: "status".}
 proc error*(b: MTLCommandBuffer): NSError {.objc: "error".}
+proc presentDrawable*(
+  b: MTLCommandBuffer, drawable: MTLDrawable
+) {.objc: "presentDrawable:".}
 
 proc newLibraryWithSource*(
   device: MTLDevice, source: NSString, options: MTLCompileOptions, error: ptr NSError
 ): MTLLibrary {.objc: "newLibraryWithSource:options:error:".}
 
+proc newFunctionWithName*(
+  l: MTLLibrary, name: NSString
+): MTLFunction {.objc: "newFunctionWithName:".}
+
 proc newRenderPipelineStateWithDescriptor*(
   device: MTLDevice, descriptor: MTLRenderPipelineDescriptor, error: ptr NSError
 ): MTLRenderPipelineState {.objc: "newRenderPipelineStateWithDescriptor:error:".}
+
+proc newBufferWithBytes*(
+  device: MTLDevice, bytes: pointer, length: NSUInteger, options: MTLResourceOptions
+): MTLBuffer {.objc: "newBufferWithBytes:length:options:".}
 
 proc renderCommandEncoderWithDescriptor*(
   b: MTLCommandBuffer, descriptor: MTLRenderPassDescriptor
