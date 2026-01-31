@@ -316,3 +316,10 @@ proc getBytes*(
 
 proc width*(t: MTLTexture): NSUInteger {.objc: "width".}
 proc height*(t: MTLTexture): NSUInteger {.objc: "height".}
+
+template copySeqToBuf[T](buf: MTLBuffer, src: seq[T], bytes: int) =
+  let dst = buf.contents()
+  assert not dst.isNil, "MTLBuffer cannot be nil"
+  assert src.len() * sizeof(T) >= bytes, "buffer src too small"
+  copyMem(dst, src[0].addr, bytes)
+
