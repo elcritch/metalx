@@ -28,6 +28,12 @@ metalLayer.setDrawableSize(
   CGSize(width: window.size.x.float, height: window.size.y.float)
 )
 contentView.setLayer(metalLayer)
+echo "Metal layer set up: pixelFormat=",
+  metalLayer.pixelFormat().uint,
+  " drawableSize=",
+  metalLayer.drawableSize().width,
+  "x",
+  metalLayer.drawableSize().height
 
 let shaderSource =
   """
@@ -63,6 +69,8 @@ let library = newLibraryWithSource(
 if library.isNil:
   echo error
   quit "Failed to compile Metal shaders"
+else:
+  echo "Compiled Metal library"
 
 let vertexFunction =
   newFunctionWithName(library, NSString.withUTF8String(cstring("vs_main")))
@@ -70,6 +78,8 @@ let fragmentFunction =
   newFunctionWithName(library, NSString.withUTF8String(cstring("fs_main")))
 if vertexFunction.isNil or fragmentFunction.isNil:
   quit "Failed to find Metal shader functions"
+else:
+  echo "Shader functions loaded"
 
 let pipelineDescriptor = MTLRenderPipelineDescriptor.alloc().init()
 setVertexFunction(pipelineDescriptor, vertexFunction)
@@ -83,6 +93,8 @@ let pipelineState =
 if pipelineState.isNil:
   echo error
   quit "Failed to create pipeline state"
+else:
+  echo "Pipeline state created"
 
 let vertices: array[6, float32] =
   [-0.6'f32, -0.6'f32, 0.6'f32, -0.6'f32, 0.0'f32, 0.6'f32]
@@ -95,18 +107,29 @@ let vertexBuffer = newBufferWithBytes(
 )
 if vertexBuffer.isNil:
   quit "Failed to create vertex buffer"
+else:
+  echo "Vertex buffer created"
 
 let queue = newCommandQueue(device)
 if queue.isNil:
   quit "Failed to create command queue"
+else:
+  echo "Command queue created"
 
 proc drawFrame() =
   let drawable = metalLayer.nextDrawable()
   if drawable.isNil:
+    echo "Drawable is nil"
     return
 
   let passDescriptor = MTLRenderPassDescriptor.renderPassDescriptor()
+  if passDescriptor.isNil:
+    echo "Render pass descriptor is nil"
+    return
   let colorAttachment = objectAtIndexedSubscript(colorAttachments(passDescriptor), 0)
+  if colorAttachment.isNil:
+    echo "Color attachment is nil"
+    return
   setTexture(colorAttachment, texture(drawable))
   setLoadAction(colorAttachment, MTLLoadActionClear)
   setStoreAction(colorAttachment, MTLStoreActionStore)
