@@ -15,12 +15,12 @@ let window = newWindow("Metal Triangle (Windy)", ivec2(1280, 800))
 
 let cocoaWindow: NSWindow = cast[NSWindow](cast[pointer](window.inner.int))
 let existingView = cocoaWindow.contentView()
-let baseView = NSView.alloc().initWithFrame(existingView.bounds())
-baseView.setAutoresizingMask(
+let metalHostView = NSView.alloc().initWithFrame(existingView.bounds())
+metalHostView.setAutoresizingMask(
   NSAutoresizingMaskOptions(NSViewWidthSizable.ord or NSViewHeightSizable.ord)
 )
-cocoaWindow.setContentView(baseView)
-baseView.setWantsLayer(true)
+metalHostView.setWantsLayer(true)
+existingView.addSubview(metalHostView)
 
 let device = MTLCreateSystemDefaultDevice()
 if device.isNil:
@@ -32,8 +32,8 @@ metalLayer.setPixelFormat(MTLPixelFormatBGRA8Unorm)
 metalLayer.setDrawableSize(
   NSSize(width: window.size.x.float, height: window.size.y.float)
 )
-metalLayer.setFrame(baseView.bounds())
-baseView.setLayer(metalLayer)
+metalLayer.setFrame(metalHostView.bounds())
+metalHostView.setLayer(metalLayer)
 echo "Metal layer set up: pixelFormat=",
   metalLayer.pixelFormat().uint,
   " drawableSize=",
@@ -122,6 +122,8 @@ if queue.isNil:
 else:
   echo "Command queue created"
 
+var frameIndex = 0
+
 proc drawFrame() =
   let drawable = metalLayer.nextDrawable()
   if drawable.isNil:
@@ -144,16 +146,25 @@ proc drawFrame() =
   )
 
   let buffer = commandBuffer(queue)
+  if buffer.isNil:
+    echo "Command buffer is nil"
+    return
   let encoder = renderCommandEncoderWithDescriptor(buffer, passDescriptor)
+  if encoder.isNil:
+    echo "Encoder is nil"
+    return
   setRenderPipelineState(encoder, pipelineState)
   setVertexBuffer(encoder, vertexBuffer, 0, 0)
   drawPrimitives(encoder, MTLPrimitiveType(3), 0, 3)
   endEncoding(encoder)
   presentDrawable(buffer, cast[MTLDrawable](drawable))
   commit(buffer)
+  if frameIndex == 0:
+    echo "First frame submitted"
+  inc frameIndex
 
 while not window.closeRequested:
-  metalLayer.setFrame(baseView.bounds())
+  metalLayer.setFrame(metalHostView.bounds())
   metalLayer.setDrawableSize(
     NSSize(width: window.size.x.float, height: window.size.y.float)
   )
