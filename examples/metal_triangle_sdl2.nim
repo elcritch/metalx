@@ -6,7 +6,6 @@ import metalx/[cametal, metal, sdl2shim]
 when not defined(macosx):
   {.error: "This example requires macOS.".}
 
-{.passL: "-L/opt/homebrew/lib -lSDL2".}
 
 discard setHint(SDL_HINT_RENDER_DRIVER, "metal")
 if init(INIT_VIDEO) != SdlSuccess:
