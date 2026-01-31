@@ -12,6 +12,11 @@ type
   MTLLoadAction* = distinct NSUInteger
   MTLStoreAction* = distinct NSUInteger
   MTLResourceOptions* = distinct NSUInteger
+  MTLTextureUsage* = distinct NSUInteger
+  MTLStorageMode* = distinct NSUInteger
+  MTLIndexType* = distinct NSUInteger
+  MTLBlendFactor* = distinct NSUInteger
+  MTLBlendOperation* = distinct NSUInteger
 
   MTLClearColor* = object
     red*: cdouble
@@ -22,6 +27,7 @@ type
   MTLDevice* = ptr object of NSObject
   MTLBuffer* = ptr object of NSObject
   MTLTexture* = ptr object of NSObject
+  MTLTextureDescriptor* = ptr object of NSObject
   MTLLibrary* = ptr object of NSObject
   MTLFunction* = ptr object of NSObject
   MTLCompileOptions* = ptr object of NSObject
@@ -38,14 +44,41 @@ type
   MTLCommandBuffer* = ptr object of NSObject
   MTLDrawable* = ptr object of NSObject
 
+  MTLOrigin* = object
+    x*, y*, z*: NSUInteger
+
+  MTLSize* = object
+    width*, height*, depth*: NSUInteger
+
+  MTLRegion* = object
+    origin*: MTLOrigin
+    size*: MTLSize
+
 const
   MTLPixelFormatBGRA8Unorm* = MTLPixelFormat(80)
   MTLPixelFormatBGRA8Unorm_sRGB* = MTLPixelFormat(81)
+  MTLPixelFormatRGBA8Unorm* = MTLPixelFormat(70)
+  MTLPixelFormatR8Unorm* = MTLPixelFormat(10)
+
+  MTLPrimitiveTypeTriangle* = MTLPrimitiveType(3)
   MTLLoadActionDontCare* = MTLLoadAction(0)
   MTLLoadActionLoad* = MTLLoadAction(1)
   MTLLoadActionClear* = MTLLoadAction(2)
   MTLStoreActionDontCare* = MTLStoreAction(0)
   MTLStoreActionStore* = MTLStoreAction(1)
+
+  MTLTextureUsageShaderRead* = MTLTextureUsage(1)
+  MTLTextureUsageRenderTarget* = MTLTextureUsage(4)
+
+  MTLStorageModeShared* = MTLStorageMode(0)
+
+  MTLIndexTypeUInt16* = MTLIndexType(0)
+
+  MTLBlendFactorZero* = MTLBlendFactor(0)
+  MTLBlendFactorOne* = MTLBlendFactor(1)
+  MTLBlendFactorSourceAlpha* = MTLBlendFactor(4)
+  MTLBlendFactorOneMinusSourceAlpha* = MTLBlendFactor(5)
+  MTLBlendOperationAdd* = MTLBlendOperation(0)
 
 proc MTLCreateSystemDefaultDevice*(): MTLDevice {.importc.}
 
@@ -74,6 +107,12 @@ proc newBufferWithBytes*(
   device: MTLDevice, bytes: pointer, length: NSUInteger, options: MTLResourceOptions
 ): MTLBuffer {.objc: "newBufferWithBytes:length:options:".}
 
+proc newBufferWithLength*(
+  device: MTLDevice, length: NSUInteger, options: MTLResourceOptions
+): MTLBuffer {.objc: "newBufferWithLength:options:".}
+
+proc contents*(b: MTLBuffer): pointer {.objc: "contents".}
+
 proc renderCommandEncoderWithDescriptor*(
   b: MTLCommandBuffer, descriptor: MTLRenderPassDescriptor
 ): MTLRenderCommandEncoder {.objc: "renderCommandEncoderWithDescriptor:".}
@@ -93,12 +132,33 @@ proc setVertexBuffer*(
   e: MTLRenderCommandEncoder, buffer: MTLBuffer, offset: NSUInteger, index: NSUInteger
 ) {.objc: "setVertexBuffer:offset:atIndex:".}
 
+proc setFragmentTexture*(
+  e: MTLRenderCommandEncoder, texture: MTLTexture, index: NSUInteger
+) {.objc: "setFragmentTexture:atIndex:".}
+
+proc setVertexBytes*(
+  e: MTLRenderCommandEncoder, bytes: pointer, length: NSUInteger, index: NSUInteger
+) {.objc: "setVertexBytes:length:atIndex:".}
+
+proc setFragmentBytes*(
+  e: MTLRenderCommandEncoder, bytes: pointer, length: NSUInteger, index: NSUInteger
+) {.objc: "setFragmentBytes:length:atIndex:".}
+
 proc drawPrimitives*(
   e: MTLRenderCommandEncoder,
   primType: MTLPrimitiveType,
   vertexStart: NSUInteger,
   vertexCount: NSUInteger,
 ) {.objc: "drawPrimitives:vertexStart:vertexCount:".}
+
+proc drawIndexedPrimitives*(
+  e: MTLRenderCommandEncoder,
+  primType: MTLPrimitiveType,
+  indexCount: NSUInteger,
+  indexType: MTLIndexType,
+  indexBuffer: MTLBuffer,
+  indexBufferOffset: NSUInteger,
+) {.objc: "drawIndexedPrimitives:indexCount:indexType:indexBuffer:indexBufferOffset:".}
 
 proc vertexFunction*(
   d: MTLRenderPipelineDescriptor
@@ -146,6 +206,34 @@ proc setPixelFormat*(
   d: MTLRenderPipelineColorAttachmentDescriptor, format: MTLPixelFormat
 ) {.objc: "setPixelFormat:".}
 
+proc setBlendingEnabled*(
+  d: MTLRenderPipelineColorAttachmentDescriptor, v: bool
+) {.objc: "setBlendingEnabled:".}
+
+proc setSourceRGBBlendFactor*(
+  d: MTLRenderPipelineColorAttachmentDescriptor, v: MTLBlendFactor
+) {.objc: "setSourceRGBBlendFactor:".}
+
+proc setDestinationRGBBlendFactor*(
+  d: MTLRenderPipelineColorAttachmentDescriptor, v: MTLBlendFactor
+) {.objc: "setDestinationRGBBlendFactor:".}
+
+proc setRgbBlendOperation*(
+  d: MTLRenderPipelineColorAttachmentDescriptor, v: MTLBlendOperation
+) {.objc: "setRgbBlendOperation:".}
+
+proc setSourceAlphaBlendFactor*(
+  d: MTLRenderPipelineColorAttachmentDescriptor, v: MTLBlendFactor
+) {.objc: "setSourceAlphaBlendFactor:".}
+
+proc setDestinationAlphaBlendFactor*(
+  d: MTLRenderPipelineColorAttachmentDescriptor, v: MTLBlendFactor
+) {.objc: "setDestinationAlphaBlendFactor:".}
+
+proc setAlphaBlendOperation*(
+  d: MTLRenderPipelineColorAttachmentDescriptor, v: MTLBlendOperation
+) {.objc: "setAlphaBlendOperation:".}
+
 proc colorAttachments*(
   d: MTLRenderPassDescriptor
 ): MTLRenderPassColorAttachmentDescriptorArray {.objc: "colorAttachments".}
@@ -188,3 +276,43 @@ proc clearColor*(
 proc setClearColor*(
   d: MTLRenderPassColorAttachmentDescriptor, color: MTLClearColor
 ) {.objc: "setClearColor:".}
+
+proc texture2DDescriptorWithPixelFormat*(
+  cls: typedesc[MTLTextureDescriptor],
+  pixelFormat: MTLPixelFormat,
+  width: NSUInteger,
+  height: NSUInteger,
+  mipmapped: bool,
+): MTLTextureDescriptor {.
+  objc: "texture2DDescriptorWithPixelFormat:width:height:mipmapped:"
+.}
+
+proc usage*(d: MTLTextureDescriptor): MTLTextureUsage {.objc: "usage".}
+proc setUsage*(d: MTLTextureDescriptor, u: MTLTextureUsage) {.objc: "setUsage:".}
+proc storageMode*(d: MTLTextureDescriptor): MTLStorageMode {.objc: "storageMode".}
+proc setStorageMode*(
+  d: MTLTextureDescriptor, m: MTLStorageMode
+) {.objc: "setStorageMode:".}
+
+proc newTextureWithDescriptor*(
+  device: MTLDevice, desc: MTLTextureDescriptor
+): MTLTexture {.objc: "newTextureWithDescriptor:".}
+
+proc replaceRegion*(
+  t: MTLTexture,
+  region: MTLRegion,
+  mipmapLevel: NSUInteger,
+  bytes: pointer,
+  bytesPerRow: NSUInteger,
+) {.objc: "replaceRegion:mipmapLevel:withBytes:bytesPerRow:".}
+
+proc getBytes*(
+  t: MTLTexture,
+  bytes: pointer,
+  bytesPerRow: NSUInteger,
+  region: MTLRegion,
+  mipmapLevel: NSUInteger,
+) {.objc: "getBytes:bytesPerRow:fromRegion:mipmapLevel:".}
+
+proc width*(t: MTLTexture): NSUInteger {.objc: "width".}
+proc height*(t: MTLTexture): NSUInteger {.objc: "height".}
