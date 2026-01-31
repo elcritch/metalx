@@ -1,7 +1,7 @@
 import std/importutils
 import darwin/objc/runtime
 import darwin/app_kit/[nsview, nswindow]
-import darwin/core_graphics/cggeometry
+import darwin/foundation/nsgeometry
 import darwin/foundation/[nserror, nsstring]
 import metalx/[cametal, metal]
 import windy
@@ -14,8 +14,13 @@ privateAccess(Window)
 let window = newWindow("Metal Triangle (Windy)", ivec2(1280, 800))
 
 let cocoaWindow: NSWindow = cast[NSWindow](cast[pointer](window.inner.int))
-let contentView = cocoaWindow.contentView()
-contentView.setWantsLayer(true)
+let existingView = cocoaWindow.contentView()
+let baseView = NSView.alloc().initWithFrame(existingView.bounds())
+baseView.setAutoresizingMask(
+  NSAutoresizingMaskOptions(NSViewWidthSizable.ord or NSViewHeightSizable.ord)
+)
+cocoaWindow.setContentView(baseView)
+baseView.setWantsLayer(true)
 
 let device = MTLCreateSystemDefaultDevice()
 if device.isNil:
@@ -25,9 +30,10 @@ let metalLayer = CAMetalLayer.alloc().init()
 metalLayer.setDevice(device)
 metalLayer.setPixelFormat(MTLPixelFormatBGRA8Unorm)
 metalLayer.setDrawableSize(
-  CGSize(width: window.size.x.float, height: window.size.y.float)
+  NSSize(width: window.size.x.float, height: window.size.y.float)
 )
-contentView.setLayer(metalLayer)
+metalLayer.setFrame(baseView.bounds())
+baseView.setLayer(metalLayer)
 echo "Metal layer set up: pixelFormat=",
   metalLayer.pixelFormat().uint,
   " drawableSize=",
@@ -147,8 +153,9 @@ proc drawFrame() =
   commit(buffer)
 
 while not window.closeRequested:
+  metalLayer.setFrame(baseView.bounds())
   metalLayer.setDrawableSize(
-    CGSize(width: window.size.x.float, height: window.size.y.float)
+    NSSize(width: window.size.x.float, height: window.size.y.float)
   )
   drawFrame()
   pollEvents()
