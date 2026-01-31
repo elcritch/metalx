@@ -5,15 +5,17 @@ Nim bindings for Metal (1–3) and Metal 4, plus a macOS Windy example that rend
 ## Requirements
 - macOS with Xcode Command Line Tools
 - Nim 2.0.10+
-- Atlas (dependency manager)
 
-## Install deps
+## Using
+
 ```sh
-atlas install
+atlas use https://github.com/elcritch/metalx
+nimble install https://github.com/elcritch/metalx # if you must, will break on older Nimble without "feature" support
 ```
 
 ## Build & Test
 ```sh
+atlas install --feature:test
 nim test
 ```
 

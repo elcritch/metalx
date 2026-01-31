@@ -1,20 +1,16 @@
-import std/importutils
 import darwin/objc/runtime
-import darwin/app_kit/[nsview, nswindow]
+import darwin/app_kit/nsview
 import darwin/foundation/nsgeometry
 import darwin/foundation/[nserror, nsstring]
 import metalx/[cametal, metal]
-import windy
+import metalx/windyshim
 
 when not defined(macosx):
   {.error: "This example requires macOS.".}
 
-privateAccess(Window)
-
 let window = newWindow("Metal Triangle (Windy)", ivec2(1280, 800))
 
-let cocoaWindow: NSWindow = cast[NSWindow](cast[pointer](window.inner.int))
-let existingView = cocoaWindow.contentView()
+let existingView = cocoaContentView(window)
 let metalHostView = NSView.alloc().initWithFrame(existingView.bounds())
 metalHostView.setAutoresizingMask(
   NSAutoresizingMaskOptions(NSViewWidthSizable.ord or NSViewHeightSizable.ord)
