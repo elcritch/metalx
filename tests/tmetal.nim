@@ -1,6 +1,6 @@
 import unittest
 import darwin/objc/runtime
-import darwin/foundation/nsstring
+import darwin/foundation/[nserror, nsstring]
 import metalx/metal
 
 suite "metal 1-3 wrappers":
@@ -10,6 +10,20 @@ suite "metal 1-3 wrappers":
     check compiles(
       renderCommandEncoderWithDescriptor(
         MTLCommandBuffer(nil), MTLRenderPassDescriptor(nil)
+      )
+    )
+    var err: NSError
+    check compiles(
+      newLibraryWithSource(
+        MTLDevice(nil),
+        NSString.withUTF8String(cstring("")),
+        MTLCompileOptions(nil),
+        addr err,
+      )
+    )
+    check compiles(
+      newRenderPipelineStateWithDescriptor(
+        MTLDevice(nil), MTLRenderPipelineDescriptor(nil), addr err
       )
     )
 
