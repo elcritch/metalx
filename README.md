@@ -60,3 +60,34 @@ if library.isNil:
 - `src/metalx/metal.nim`: Metal 1–3 bindings
 - `src/metalx/metal4.nim`: Metal 4 bindings
 - `src/metalx/cametal.nim`: `CAMetalLayer` / `CAMetalDrawable` bindings
+- `src/metalx/objc_owned.nim`: ARC/ORC-friendly retain/release wrappers for ObjC objects + autorelease pool helpers
+
+## Memory management helpers (`metalx/objc_owned`)
+Metal (and Foundation) objects returned from these bindings are Objective-C objects; Nim ARC/ORC does **not**
+automatically `retain`/`release` them. If you create/recreate resources over time (textures, buffers, pipeline
+states, etc.) or you create lots of autoreleased objects per frame (render pass descriptors, NSStrings, etc.),
+use these helpers to avoid leaks.
+
+```nim
+import metalx/objc_owned
+import metalx/metal
+
+# 1) Draining autoreleased objects (typical: once per frame)
+var framePool: AutoreleasePool
+framePool.start()
+defer: framePool.stop()
+
+# 2) Owning Metal/ObjC objects under Nim ARC/ORC
+var device: ObjcOwned[MTLDevice]
+device.resetRetained(MTLCreateSystemDefaultDevice()) # returned retained
+
+var queue: ObjcOwned[MTLCommandQueue]
+queue.resetRetained(newCommandQueue(device.borrow))  # `new*` is retained
+
+# 3) Handling "borrowed"/autoreleased results
+var cmd: ObjcOwned[MTLCommandBuffer]
+cmd.resetBorrowed(commandBuffer(queue.borrow))       # `commandBuffer` is autoreleased/+0
+commit(cmd.borrow)
+
+# When `device`/`queue`/`cmd` go out of scope (or are overwritten), ObjcOwned calls `release`.
+```
