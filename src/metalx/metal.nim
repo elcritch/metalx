@@ -38,6 +38,15 @@ type
   MTLCommandBuffer* = ptr object of NSObject
   MTLDrawable* = ptr object of NSObject
 
+const
+  MTLPixelFormatBGRA8Unorm* = MTLPixelFormat(80)
+  MTLPixelFormatBGRA8Unorm_sRGB* = MTLPixelFormat(81)
+  MTLLoadActionDontCare* = MTLLoadAction(0)
+  MTLLoadActionLoad* = MTLLoadAction(1)
+  MTLLoadActionClear* = MTLLoadAction(2)
+  MTLStoreActionDontCare* = MTLStoreAction(0)
+  MTLStoreActionStore* = MTLStoreAction(1)
+
 proc MTLCreateSystemDefaultDevice*(): MTLDevice {.importc.}
 
 proc newCommandQueue*(device: MTLDevice): MTLCommandQueue {.objc: "newCommandQueue".}
@@ -68,6 +77,10 @@ proc newBufferWithBytes*(
 proc renderCommandEncoderWithDescriptor*(
   b: MTLCommandBuffer, descriptor: MTLRenderPassDescriptor
 ): MTLRenderCommandEncoder {.objc: "renderCommandEncoderWithDescriptor:".}
+
+proc renderPassDescriptor*(
+  t: typedesc[MTLRenderPassDescriptor]
+): MTLRenderPassDescriptor {.objc: "renderPassDescriptor".}
 
 proc endEncoding*(e: MTLRenderCommandEncoder) {.objc: "endEncoding".}
 proc commit*(b: MTLCommandBuffer) {.objc: "commit".}

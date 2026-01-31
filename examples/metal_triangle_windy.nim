@@ -23,6 +23,7 @@ if device.isNil:
 
 let metalLayer = CAMetalLayer.alloc().init()
 metalLayer.setDevice(device)
+metalLayer.setPixelFormat(MTLPixelFormatBGRA8Unorm)
 metalLayer.setDrawableSize(
   CGSize(width: window.size.x.float, height: window.size.y.float)
 )
@@ -104,11 +105,11 @@ proc drawFrame() =
   if drawable.isNil:
     return
 
-  let passDescriptor = MTLRenderPassDescriptor.alloc().init()
+  let passDescriptor = MTLRenderPassDescriptor.renderPassDescriptor()
   let colorAttachment = objectAtIndexedSubscript(colorAttachments(passDescriptor), 0)
   setTexture(colorAttachment, texture(drawable))
-  setLoadAction(colorAttachment, MTLLoadAction(2))
-  setStoreAction(colorAttachment, MTLStoreAction(0))
+  setLoadAction(colorAttachment, MTLLoadActionClear)
+  setStoreAction(colorAttachment, MTLStoreActionStore)
   setClearColor(
     colorAttachment, MTLClearColor(red: 0.1, green: 0.1, blue: 0.12, alpha: 1.0)
   )
