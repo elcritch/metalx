@@ -27,8 +27,36 @@ This example uses Windy’s macOS window, grabs the underlying `NSWindow` via
 nim r examples/metal_triangle_windy.nim
 ```
 
+## Simple Metal setup (no window)
+```nim
+import darwin/foundation/nsstring
+import metalx/metal
+
+let device = MTLCreateSystemDefaultDevice()
+if device.isNil:
+  quit "No Metal device"
+
+var err: NSError
+let library = newLibraryWithSource(
+  device,
+  NSString.withUTF8String(cstring("""
+#include <metal_stdlib>
+using namespace metal;
+vertex float4 vs_main(uint vid [[vertex_id]]) {
+  return float4(0.0, 0.0, 0.0, 1.0);
+}
+fragment float4 fs_main() { return float4(1.0); }
+""")),
+  MTLCompileOptions(nil),
+  addr err
+)
+if library.isNil:
+  echo err
+
+...
+```
+
 ## Modules
 - `src/metalx/metal.nim`: Metal 1–3 bindings
 - `src/metalx/metal4.nim`: Metal 4 bindings
 - `src/metalx/cametal.nim`: `CAMetalLayer` / `CAMetalDrawable` bindings
-
