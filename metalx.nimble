@@ -9,3 +9,6 @@ srcDir        = "src"
 requires "nim >= 2.0.10"
 requires "darwin#head"
 
+feature "test":
+  requires "windy"
+
