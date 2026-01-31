@@ -13,8 +13,8 @@ privateAccess(Window)
 
 let window = newWindow("Metal Triangle (Windy)", ivec2(1280, 800))
 
-let nsWindow: NSWindow = window.inner
-let contentView = nsWindow.contentView()
+let cocoaWindow: NSWindow = cast[NSWindow](cast[pointer](window.inner.int))
+let contentView = cocoaWindow.contentView()
 contentView.setWantsLayer(true)
 
 let device = MTLCreateSystemDefaultDevice()
