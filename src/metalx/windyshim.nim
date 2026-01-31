@@ -16,9 +16,8 @@ else:
 
 export common, platform, unicode, vmath
 
-when defined(macosx):
+when defined(macosx) and not compiles(cocoaWindow(Window())):
   privateAccess(Window)
-
   proc cocoaWindow*(window: Window): NSWindow =
     cast[NSWindow](cast[pointer](window.inner.int))
 
