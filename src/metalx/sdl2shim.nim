@@ -1,6 +1,6 @@
 import sdl2
 
-{.passL: "-L/opt/homebrew/lib -Wl,-rpath,/opt/homebrew/lib -lSDL2".}
+{.passL: "-Wl,-rpath,/opt/homebrew/lib".}
 
 when defined(macosx):
   when not defined(SDL_Static):
