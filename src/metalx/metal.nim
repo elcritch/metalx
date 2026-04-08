@@ -17,6 +17,11 @@ type
   MTLIndexType* = distinct NSUInteger
   MTLBlendFactor* = distinct NSUInteger
   MTLBlendOperation* = distinct NSUInteger
+  
+  MTLComputePipelineState* = ptr object of NSObject
+  MTLComputeCommandEncoder* = ptr object of NSObject
+  MTLComputePipelineDescriptor* = ptr object of NSObject
+  MTLBlitCommandEncoder* = ptr object of NSObject
 
   MTLClearColor* = object
     red*: cdouble
@@ -59,6 +64,8 @@ const
   MTLPixelFormatBGRA8Unorm_sRGB* = MTLPixelFormat(81)
   MTLPixelFormatRGBA8Unorm* = MTLPixelFormat(70)
   MTLPixelFormatR8Unorm* = MTLPixelFormat(10)
+  MTLPixelFormatR16Float* = MTLPixelFormat(25)
+  MTLPixelFormatR32Float* = MTLPixelFormat(55)
 
   MTLPrimitiveTypeTriangle* = MTLPrimitiveType(3)
   MTLLoadActionDontCare* = MTLLoadAction(0)
@@ -68,9 +75,11 @@ const
   MTLStoreActionStore* = MTLStoreAction(1)
 
   MTLTextureUsageShaderRead* = MTLTextureUsage(1)
+  MTLTextureUsageShaderWrite* = MTLTextureUsage(2)
   MTLTextureUsageRenderTarget* = MTLTextureUsage(4)
 
   MTLStorageModeShared* = MTLStorageMode(0)
+  MTLStorageModePrivate* = MTLStorageMode(2)
 
   MTLIndexTypeUInt16* = MTLIndexType(0)
 
@@ -316,6 +325,48 @@ proc getBytes*(
 
 proc width*(t: MTLTexture): NSUInteger {.objc: "width".}
 proc height*(t: MTLTexture): NSUInteger {.objc: "height".}
+
+proc newComputePipelineStateWithFunction*(device: MTLDevice,
+                                          fn: MTLFunction,
+                                          error: ptr NSError): MTLComputePipelineState {.
+  objc: "newComputePipelineStateWithFunction:error:".}
+
+proc computeCommandEncoder*(cmd: MTLCommandBuffer): MTLComputeCommandEncoder {.
+  objc: "computeCommandEncoder".}
+
+proc setComputePipelineState*(enc: MTLComputeCommandEncoder,
+                              state: MTLComputePipelineState) {.
+  objc: "setComputePipelineState:".}
+
+proc setTexture*(enc: MTLComputeCommandEncoder,
+                 tex: MTLTexture,
+                 index: NSUInteger) {.
+  objc: "setTexture:atIndex:".}
+
+proc setBuffer*(enc: MTLComputeCommandEncoder,
+                buffer: MTLBuffer,
+                offset: NSUInteger,
+                index: NSUInteger) {.
+  objc: "setBuffer:offset:atIndex:".}
+
+proc dispatchThreadgroups*(enc: MTLComputeCommandEncoder,
+                           threadgroupsPerGrid: MTLSize,
+                           threadsPerThreadgroup: MTLSize) {.
+  objc: "dispatchThreadgroups:threadsPerThreadgroup:".}
+
+proc endEncoding*(enc: MTLComputeCommandEncoder) {.
+  objc: "endEncoding".}
+
+proc blitCommandEncoder*(cmd: MTLCommandBuffer): MTLBlitCommandEncoder {.
+  objc: "blitCommandEncoder".}
+
+proc copyFromTexture*(enc: MTLBlitCommandEncoder,
+                     source: MTLTexture,
+                     dest: MTLTexture) {.
+  objc: "copyFromTexture:toTexture:".}
+
+proc endEncoding*(enc: MTLBlitCommandEncoder) {.
+  objc: "endEncoding".}
 
 template copyToBuf*[T](buf: MTLBuffer, src: seq[T], bytes: int) =
   let dst = buf.contents()
