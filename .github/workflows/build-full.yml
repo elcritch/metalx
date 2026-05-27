@@ -44,7 +44,7 @@ jobs:
         atlas -v
 
     - name: Install Deps
-      run: atlas install --feature:test --update
+      run: atlas install --feature:test --update -t:8
 
     - name: Build Tests
       run: nim test
